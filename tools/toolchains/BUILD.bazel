@@ -1,0 +1,76 @@
+"""Python toolchain definitions."""
+
+load("@rules_venv//python:py_library.bzl", "py_library")
+load("@rules_venv//python/black:defs.bzl", "py_black_toolchain")
+load("@rules_venv//python/isort:defs.bzl", "py_isort_toolchain")
+load("@rules_venv//python/mypy:defs.bzl", "py_mypy_toolchain")
+load("@rules_venv//python/pylint:defs.bzl", "py_pylint_toolchain")
+load("@rules_venv//python/pytest:defs.bzl", "py_pytest_toolchain")
+
+py_black_toolchain(
+    name = "py_black_toolchain_impl",
+    black = "@pip_deps//:black",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "py_black_toolchain",
+    toolchain = ":py_black_toolchain_impl",
+    toolchain_type = "@rules_venv//python/black:toolchain_type",
+)
+
+py_isort_toolchain(
+    name = "py_isort_toolchain_impl",
+    isort = "@pip_deps//:isort",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "py_isort_toolchain",
+    toolchain = ":py_isort_toolchain_impl",
+    toolchain_type = "@rules_venv//python/isort:toolchain_type",
+)
+
+py_mypy_toolchain(
+    name = "py_mypy_toolchain_impl",
+    mypy = "@pip_deps//:mypy",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "py_mypy_toolchain",
+    toolchain = ":py_mypy_toolchain_impl",
+    toolchain_type = "@rules_venv//python/mypy:toolchain_type",
+)
+
+py_pylint_toolchain(
+    name = "py_pylint_toolchain_impl",
+    pylint = "@pip_deps//:pylint",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "py_pylint_toolchain",
+    toolchain = ":py_pylint_toolchain_impl",
+    toolchain_type = "@rules_venv//python/pylint:toolchain_type",
+)
+
+py_library(
+    name = "pytest",
+    deps = [
+        "@pip_deps//:pytest",
+        "@pip_deps//:pytest_cov",
+    ],
+)
+
+py_pytest_toolchain(
+    name = "py_pytest_toolchain_impl",
+    pytest = ":pytest",
+    visibility = ["//visibility:public"],
+)
+
+toolchain(
+    name = "py_pytest_toolchain",
+    toolchain = ":py_pytest_toolchain_impl",
+    toolchain_type = "@rules_venv//python/pytest:toolchain_type",
+)

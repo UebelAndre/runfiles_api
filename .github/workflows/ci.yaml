@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+env:
+  BAZEL_STARTUP_FLAGS: --bazelrc=${{ github.workspace }}/.github/github.bazelrc
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - uses: actions/checkout@v4
+      - uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      - name: Setup Bazelrc (Windows)
+        run: |
+          echo "TEMP=$env:RUNNER_TEMP" >> "$env:GITHUB_ENV"
+          echo "TMP=$env:RUNNER_TEMP" >> "$env:GITHUB_ENV"
+          echo "startup --output_user_root=D:/bzl" > ./user.bazelrc
+        if: startswith(runner.os, 'Windows')
+      - name: Setup Bazelrc
+        run: |
+          echo "common --keep_going" >> ./user.bazelrc
+
+      # Ensure the repo is fully buildable.
+      - name: Test (Unix)
+        run: bazel ${BAZEL_STARTUP_FLAGS[@]} build //...
+        if: startswith(runner.os, 'Windows') != true
+      - name: Test (Windows)
+        run: bazel $env:BAZEL_STARTUP_FLAGS build //...
+        if: startswith(runner.os, 'Windows')

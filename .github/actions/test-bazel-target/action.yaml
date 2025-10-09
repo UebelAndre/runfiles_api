@@ -1,0 +1,40 @@
+name: Test Bazel Target
+description: Tests a Bazel target across platforms
+
+inputs:
+  target:
+    description: 'Bazel test target to run'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: bazel-contrib/setup-bazel@0.14.0
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+
+    - name: Setup Bazelrc (Windows)
+      shell: bash
+      run: |
+        echo "TEMP=${{ runner.temp }}" >> "$GITHUB_ENV"
+        echo "TMP=${{ runner.temp }}" >> "$GITHUB_ENV"
+        echo "startup --output_user_root=D:/bzl" > ./user.bazelrc
+      if: runner.os == 'Windows'
+
+    - name: Setup Bazelrc
+      shell: bash
+      run: |
+        echo "common --keep_going" >> ./user.bazelrc
+
+    - name: Test (Unix)
+      shell: bash
+      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }}
+      if: runner.os != 'Windows'
+
+    - name: Test (Windows)
+      shell: pwsh
+      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }}
+      if: runner.os == 'Windows'
+

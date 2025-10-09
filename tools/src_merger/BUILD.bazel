@@ -1,0 +1,7 @@
+load("@rules_venv//python:py_binary.bzl", "py_binary")
+
+py_binary(
+    name = "src_merger",
+    srcs = ["src_merger.py"],
+    visibility = ["//visibility:public"],
+)

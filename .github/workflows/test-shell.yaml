@@ -1,0 +1,26 @@
+name: Test Shell
+
+on:
+  push:
+    branches:
+      - main
+  merge_group:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  test-shell:
+    name: Shell
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/test-bazel-target
+        with:
+          target: //test/shell:test_runfiles
+

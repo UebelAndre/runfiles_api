@@ -1,0 +1,16 @@
+load("//:runfiles_api_test.bzl", "runfiles_api_test")
+load("//tools/src_merger:src_merger.bzl", "runfiles_source_file")
+
+runfiles_source_file(
+    name = "runfiles_user",
+    testonly = True,
+    src = "runfiles_user_entrypoint.sh",
+    out = "runfiles_user.sh",
+    runfiles = "@rules_shell//shell/runfiles",
+    template = "# {RUNFILES_API}",
+)
+
+runfiles_api_test(
+    name = "test_runfiles",
+    binary = ":runfiles_user",
+)

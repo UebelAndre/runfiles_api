@@ -1,0 +1,16 @@
+load("//:runfiles_api_test.bzl", "runfiles_api_test")
+load("//tools/src_merger:src_merger.bzl", "runfiles_source_file")
+
+runfiles_source_file(
+    name = "runfiles_user",
+    testonly = True,
+    src = "runfiles_user_entrypoint.py",
+    out = "runfiles_user.py",
+    runfiles = "@rules_python//python/runfiles",
+    template = "from python.runfiles import Runfiles",
+)
+
+runfiles_api_test(
+    name = "test_runfiles",
+    binary = ":runfiles_user",
+)
