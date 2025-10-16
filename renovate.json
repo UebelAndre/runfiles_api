@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "schedule": [
+    "at 00:00"
+  ],
+  "timezone": "UTC",
+  "labels": [
+    "dependencies",
+    "bazel"
+  ],
+  "prConcurrentLimit": 10,
+  "commitMessagePrefix": "bazel:",
+  "bazel-module": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["bazel-module"],
+      "groupName": "Bazel dependencies"
+    }
+  ]
+}
+
