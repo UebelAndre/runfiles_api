@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "schedule": [
     "before 1am"
@@ -18,9 +18,10 @@
   },
   "packageRules": [
     {
-      "matchManagers": ["bazel-module"],
+      "matchManagers": [
+        "bazel-module"
+      ],
       "groupName": "Bazel dependencies"
     }
   ]
 }
-

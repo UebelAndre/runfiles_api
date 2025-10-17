@@ -6,13 +6,13 @@ module(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "rules_cc", version = "0.2.8")
+bazel_dep(name = "rules_cc", version = "0.2.10")
 bazel_dep(name = "rules_go", version = "0.57.0")
 bazel_dep(name = "rules_java", version = "8.16.1")
-bazel_dep(name = "rules_python", version = "1.5.1")
-bazel_dep(name = "rules_req_compile", version = "1.0.0rc35")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "rules_req_compile", version = "1.0.0rc38")
 bazel_dep(name = "rules_rust", version = "0.66.0")
-bazel_dep(name = "rules_shell", version = "0.5.1")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_venv", version = "0.6.0")
 
 requirements = use_extension("@rules_req_compile//extensions:python.bzl", "requirements")

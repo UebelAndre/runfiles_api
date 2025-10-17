@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       # Checkout the code
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-cache: true
@@ -35,7 +35,7 @@ jobs:
         with:
           gofmt-flags: -e -d
 
-      - uses: DoozyX/clang-format-lint-action@v0.14
+      - uses: DoozyX/clang-format-lint-action@v0.20
         with:
           source: '.'
           extensions: 'h,c,cc,proto'
