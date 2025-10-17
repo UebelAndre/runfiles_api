@@ -35,7 +35,7 @@ jobs:
         with:
           gofmt-flags: -e -d
 
-      - uses: DoozyX/clang-format-lint-action@v0.14
+      - uses: DoozyX/clang-format-lint-action@v0.20
         with:
           source: '.'
           extensions: 'h,c,cc,proto'
