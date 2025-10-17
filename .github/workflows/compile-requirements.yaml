@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     name: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Compile requirements
         if: runner.os == 'Windows'
         run: |
