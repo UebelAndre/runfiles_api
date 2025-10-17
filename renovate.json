@@ -4,7 +4,7 @@
     "config:base"
   ],
   "schedule": [
-    "at 00:00"
+    "before 1am"
   ],
   "timezone": "UTC",
   "labels": [
