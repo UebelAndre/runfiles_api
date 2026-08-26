@@ -18,8 +18,9 @@ black==25.9.0 \
     --hash=sha256:a16b14a44c1af60a210d8da28e108e13e75a284bf21a9afa6b4571f96ab8bb9d
     # via _main/tools/requirements/requirements.in
     # https://files.pythonhosted.org/packages/28/f9/66f26bfbbf84b949cc77a41a43e138d83b109502cd9c52dfc94070ca51f2/black-25.9.0-cp311-cp311-macosx_11_0_arm64.whl#sha256=a16b14a44c1af60a210d8da28e108e13e75a284bf21a9afa6b4571f96ab8bb9d
-click==8.3.0 \
-    --hash=sha256:9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc
+click==8.5.0 \
+    --hash=sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360 \
+    --hash=sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34
     # via black (>=8.0.0)
     # https://files.pythonhosted.org/packages/db/d3/9dcc0f5797f070ec8edf30fbadfb200e71d9db6b84d211e3b2085a7589a0/click-8.3.0-py3-none-any.whl#sha256=9b9f285302c6e3064f4330c05f05b81945b2a39544279343e6e7c5f27a9baddc
 coverage==7.10.7 \
