@@ -1,295 +1,350 @@
-"""Runfiles API test suite - runs against any binary.
+"""Runfiles API conformance scenarios.
 
-This test suite validates that binaries correctly implement the runfiles API
-by invoking them with different environment configurations and directory structures.
-
-Binary Interface:
-    All binaries must accept a single command-line argument: an rlocationpath
-    (e.g., "workspace/path/to/file"). The binary resolves this path using the
-    runfiles API and prints the file contents to stdout.
-
-    Example:
-        $ ./runfiles_user runfiles_api/test/data/sample.txt
-        This is test data for runfiles API testing.
-        ...
+Every scenario launches the subject from a scratch directory with a controlled
+environment and filesystem layout, then asserts on its exit code and output.
+The subject contract is documented in `README.md`. The reference subject in
+`test/reference/` is expected to pass every scenario; the per-language subjects
+fail exactly where their library diverges from it.
 """
 
-import os
-import shutil
-import subprocess
-import sys
+from __future__ import annotations
+
 from pathlib import Path
 
 import pytest
 
+from harness.layout import (
+    make_manifest,
+    make_runfiles_dir,
+    manifest_path,
+    write_manifest,
+)
+from harness.subject import (
+    EXIT_NO_RUNFILES,
+    EXIT_NOT_FOUND,
+    EXIT_OK,
+    Result,
+    Subject,
+    load_subject,
+    run,
+)
 
-def minimal_runfiles(rlocationpath: str) -> Path:
-    """Locate a runfile without using any runfiles API.
+KEY = "runfiles_api/test_data.txt"
+"""The rlocationpath used by most scenarios."""
 
-    This is a minimal implementation that directly checks environment variables
-    and filesystem locations to find runfiles, used only for test setup.
-
-    Args:
-        rlocationpath: The runfiles path (e.g., "workspace/path/to/file")
-
-    Returns:
-        The absolute path to the runfile, or None if not found
-    """
-    # Try RUNFILES_DIR
-    if runfiles_dir := os.environ.get("RUNFILES_DIR"):
-        path = Path(runfiles_dir) / rlocationpath
-        if path.exists():
-            return path
-
-    # Try TEST_SRCDIR
-    if test_srcdir := os.environ.get("TEST_SRCDIR"):
-        path = Path(test_srcdir) / rlocationpath
-        if path.exists():
-            return path
-
-    # Try RUNFILES_MANIFEST_FILE
-    if manifest_file := os.environ.get("RUNFILES_MANIFEST_FILE"):
-        if Path(manifest_file).exists():
-            with open(manifest_file, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#"):
-                        continue
-                    parts = line.split(" ", 1)
-                    if len(parts) == 2 and parts[0] == rlocationpath:
-                        return Path(parts[1])
-
-    raise FileNotFoundError(f"Failed to locate runfile: {rlocationpath}")
+CONTENT = "runfiles_api test data"
+"""The content of the runfile used by most scenarios."""
 
 
-@pytest.fixture(name="binary_under_test")
-def binary_under_test_fixture(tmp_path: Path) -> Path:
-    """Fixture that provides the path to the binary under test.
-
-    Returns a copy of the binary in a unique temporary directory.
-    """
-    # Get the binary rlocation path from RUNFILES_USER environment variable
-    runfiles_user = os.environ.get("RUNFILES_BINARY")
-    if not runfiles_user:
-        pytest.fail("RUNFILES_BINARY environment variable not set")
-
-    # Use minimal_runfiles to locate the binary
-    binary_path = minimal_runfiles(runfiles_user)
-    if not binary_path:
-        pytest.fail(f"Could not locate binary at: {runfiles_user}")
-
-    # Create a copy of the binary in a unique temp directory
-    binary_copy_dir = tmp_path / "binary"
-    binary_copy_dir.mkdir(parents=True, exist_ok=True)
-    binary_copy = binary_copy_dir / binary_path.name
-    shutil.copy2(binary_path, binary_copy)
-    binary_copy.chmod(0o755)
-
-    return binary_copy
+@pytest.fixture(name="subject")
+def subject_fixture(tmp_path: Path) -> Subject:
+    """The subject under test, copied into this test's scratch directory."""
+    return load_subject(tmp_path)
 
 
-@pytest.fixture(name="runfiles_dir")
-def runfiles_dir_fixture(tmp_path: Path) -> Path:
-    """Produces a mock `RUNFILES_DIR` that points to generated runfiles."""
-    # Create a runfiles directory structure
-    runfiles_dir = tmp_path / "runfiles"
-    runfiles_dir.mkdir(parents=True)
-
-    # Create test data file in the runfiles directory
-    test_file = runfiles_dir / "runfiles_api" / "test_data.txt"
-    test_file.parent.mkdir(parents=True, exist_ok=True)
-    test_file.write_text("Test data content", encoding="utf-8")
-
-    return runfiles_dir
+def assert_content(result: Result, content: str) -> None:
+    """Assert that the subject succeeded and printed exactly `content`."""
+    assert result.returncode == EXIT_OK, result
+    assert result.stdout.strip() == content, result
 
 
-@pytest.fixture(name="runfiles_manifest")
-def runfiles_manifest_fixture(tmp_path: Path) -> Path:
-    """Produces a mock `RUNFILES_MANIFEST` that points to generated runfiles."""
-    # Create actual files in a separate location
-    data_dir = tmp_path / "data"
-    data_dir.mkdir(parents=True)
-
-    test_file = data_dir / "test_data.txt"
-    test_file.write_text("Test data content", encoding="utf-8")
-
-    # Create manifest file that maps rlocationpaths to actual file paths
-    manifest_file = tmp_path / "MANIFEST"
-    manifest_content = f"runfiles_api/test_data.txt {test_file}\n"
-    manifest_file.write_text(manifest_content, encoding="utf-8")
-
-    return manifest_file
+def assert_failure(result: Result, returncode: int | None = None) -> None:
+    """Assert that the subject failed without printing any runfile content."""
+    if returncode is None:
+        assert result.returncode != EXIT_OK, result
+    else:
+        assert result.returncode == returncode, result
+    assert CONTENT not in result.stdout, result
 
 
-def binary_args(binary: Path) -> list[str]:
-    """Produce arguments for a subprocess of a given binary."""
-
-    if binary.name.endswith(".py"):
-        return [sys.executable, "-B", "-s", "-P", str(binary)]
-
-    if binary.name.endswith(".sh"):
-        bash = shutil.which("bash")
-        if not bash:
-            bash = shutil.which("bash.exe")
-        if not bash:
-            bash = "/bin/bash"
-        return [bash, str(binary)]
-
-    return [str(binary)]
+def adjacent_runfiles_dir(subject: Subject) -> Path:
+    """The `<binary>.runfiles` directory Bazel would create next to the subject."""
+    return Path(f"{subject.path}.runfiles")
 
 
-def test_no_runfiles(binary_under_test: Path) -> None:
-    """Test that no files are found if no runfiles envs or paths are available."""
-    # The binary should fail to locate runfiles
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
-        env={},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
+# ---------------------------------------------------------------------------
+# Environment-based discovery
+# ---------------------------------------------------------------------------
+
+
+def test_no_runfiles(subject: Subject) -> None:
+    """Without any discovery inputs the subject reports that runfiles are unavailable."""
+    result = run(subject, [KEY])
+    assert_failure(result, EXIT_NO_RUNFILES)
+
+
+def test_runfiles_dir_env(subject: Subject, tmp_path: Path) -> None:
+    """`RUNFILES_DIR` alone enables directory-based lookups."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
+    result = run(subject, [KEY], env={"RUNFILES_DIR": str(runfiles_dir)})
+    assert_content(result, CONTENT)
+
+
+def test_runfiles_manifest_env(subject: Subject, tmp_path: Path) -> None:
+    """`RUNFILES_MANIFEST_FILE` alone enables manifest-based lookups."""
+    manifest = make_manifest(tmp_path / "manifest", {KEY: CONTENT})
+    result = run(subject, [KEY], env={"RUNFILES_MANIFEST_FILE": str(manifest)})
+    assert_content(result, CONTENT)
+
+
+def test_manifest_env_takes_precedence_over_dir_env(
+    subject: Subject, tmp_path: Path
+) -> None:
+    """When both variables are set, the manifest is used."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: "from directory"})
+    manifest = make_manifest(tmp_path / "manifest", {KEY: "from manifest"})
+    result = run(
+        subject,
+        [KEY],
+        env={
+            "RUNFILES_DIR": str(runfiles_dir),
+            "RUNFILES_MANIFEST_FILE": str(manifest),
+        },
     )
-
-    # Expect non-zero exit code since runfiles cannot be found
-    assert result.returncode != 0, "Binary should fail when no runfiles are available"
+    assert_content(result, "from manifest")
 
 
-def test_runfiles_dir_env(binary_under_test: Path, runfiles_dir: Path) -> None:
-    """Test that runfiles are able to locate using RUNFILES_DIR environment variable."""
-    # Run the binary with the runfiles directory
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
+def test_manifest_only_env(subject: Subject, tmp_path: Path) -> None:
+    """`RUNFILES_MANIFEST_ONLY=1` forces the manifest even when a directory is available."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: "from directory"})
+    manifest = make_manifest(tmp_path / "manifest", {KEY: "from manifest"})
+    result = run(
+        subject,
+        [KEY],
+        env={
+            "RUNFILES_DIR": str(runfiles_dir),
+            "RUNFILES_MANIFEST_FILE": str(manifest),
+            "RUNFILES_MANIFEST_ONLY": "1",
+        },
+    )
+    assert_content(result, "from manifest")
+
+
+def test_empty_manifest_env_falls_back_to_dir_env(
+    subject: Subject, tmp_path: Path
+) -> None:
+    """An empty `RUNFILES_MANIFEST_FILE` is treated as unset."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
+    result = run(
+        subject,
+        [KEY],
+        env={"RUNFILES_DIR": str(runfiles_dir), "RUNFILES_MANIFEST_FILE": ""},
+    )
+    assert_content(result, CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# argv0-based discovery
+# ---------------------------------------------------------------------------
+
+
+def test_adjacent_runfiles_dir(subject: Subject) -> None:
+    """A `<binary>.runfiles` directory is discovered without any environment variables."""
+    make_runfiles_dir(adjacent_runfiles_dir(subject), {KEY: CONTENT})
+    result = run(subject, [KEY])
+    assert_content(result, CONTENT)
+
+
+def test_adjacent_runfiles_dir_with_manifest(subject: Subject, tmp_path: Path) -> None:
+    """A `<binary>.runfiles/MANIFEST` file is discovered without any environment variables."""
+    make_manifest(
+        tmp_path / "data",
+        {KEY: CONTENT},
+        manifest=adjacent_runfiles_dir(subject) / "MANIFEST",
+    )
+    result = run(subject, [KEY])
+    assert_content(result, CONTENT)
+
+
+def test_adjacent_runfiles_manifest(subject: Subject, tmp_path: Path) -> None:
+    """A `<binary>.runfiles_manifest` file is discovered without any environment variables.
+
+    This is the layout Bazel produces on Windows when runfiles trees are disabled.
+    """
+    make_manifest(
+        tmp_path / "data",
+        {KEY: CONTENT},
+        manifest=Path(f"{subject.path}.runfiles_manifest"),
+    )
+    result = run(subject, [KEY])
+    assert_content(result, CONTENT)
+
+
+def test_adjacent_runfiles_dir_with_empty_manifest_env(
+    subject: Subject, tmp_path: Path
+) -> None:
+    """An empty `RUNFILES_MANIFEST_FILE` does not disable argv0 discovery."""
+    make_manifest(
+        tmp_path / "data",
+        {KEY: CONTENT},
+        manifest=adjacent_runfiles_dir(subject) / "MANIFEST",
+    )
+    result = run(subject, [KEY], env={"RUNFILES_MANIFEST_FILE": ""})
+    assert_content(result, CONTENT)
+
+
+def test_env_takes_precedence_over_adjacent_runfiles_dir(
+    subject: Subject, tmp_path: Path
+) -> None:
+    """Variables inherited from a parent process win over the subject's own runfiles.
+
+    This is what makes `data` dependencies on other binaries work.
+    """
+    make_runfiles_dir(adjacent_runfiles_dir(subject), {KEY: "from adjacent"})
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: "from env"})
+    result = run(subject, [KEY], env={"RUNFILES_DIR": str(runfiles_dir)})
+    assert_content(result, "from env")
+
+
+# ---------------------------------------------------------------------------
+# Lookup semantics
+# ---------------------------------------------------------------------------
+
+
+def test_missing_runfile_dir_env(subject: Subject, tmp_path: Path) -> None:
+    """Looking up an unknown path in a directory reports that the runfile is missing."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
+    result = run(
+        subject, ["runfiles_api/missing.txt"], env={"RUNFILES_DIR": str(runfiles_dir)}
+    )
+    assert_failure(result, EXIT_NOT_FOUND)
+
+
+def test_missing_runfile_manifest_env(subject: Subject, tmp_path: Path) -> None:
+    """Looking up an unknown key in a manifest reports that the runfile is missing."""
+    manifest = make_manifest(tmp_path / "manifest", {KEY: CONTENT})
+    result = run(
+        subject,
+        ["runfiles_api/missing.txt"],
+        env={"RUNFILES_MANIFEST_FILE": str(manifest)},
+    )
+    assert_failure(result, EXIT_NOT_FOUND)
+
+
+def test_manifest_directory_entry(subject: Subject, tmp_path: Path) -> None:
+    """A path below a directory entry in the manifest resolves through that entry."""
+    data_dir = make_runfiles_dir(tmp_path / "data", {"nested/test_data.txt": CONTENT})
+    manifest = write_manifest(tmp_path / "MANIFEST", {"runfiles_api/data": data_dir})
+    result = run(
+        subject,
+        ["runfiles_api/data/nested/test_data.txt"],
+        env={"RUNFILES_MANIFEST_FILE": str(manifest)},
+    )
+    assert_content(result, CONTENT)
+
+
+def test_manifest_target_path_with_spaces(subject: Subject, tmp_path: Path) -> None:
+    """A manifest entry whose target path contains spaces (legacy format)."""
+    data_dir = make_runfiles_dir(
+        tmp_path / "dir with spaces", {"test data.txt": CONTENT}
+    )
+    manifest = write_manifest(tmp_path / "MANIFEST", {KEY: data_dir / "test data.txt"})
+    result = run(subject, [KEY], env={"RUNFILES_MANIFEST_FILE": str(manifest)})
+    assert_content(result, CONTENT)
+
+
+def test_manifest_escaped_entry(subject: Subject, tmp_path: Path) -> None:
+    """A manifest entry using Bazel's escaped format.
+
+    Lines whose key or target contains a space, newline, or backslash start
+    with a space. In the key, those characters are escaped as `\\s`, `\\n`,
+    and `\\b`; in the target only newlines and backslashes are escaped.
+    """
+    key = "runfiles_api/test data.txt"
+    data_dir = make_runfiles_dir(
+        tmp_path / "dir with spaces", {"test data.txt": CONTENT}
+    )
+    manifest = tmp_path / "MANIFEST"
+    manifest.write_text(
+        f" {key.replace(' ', chr(92) + 's')} "
+        f"{manifest_path(data_dir / 'test data.txt')}\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    result = run(subject, [key], env={"RUNFILES_MANIFEST_FILE": str(manifest)})
+    assert_content(result, CONTENT)
+
+
+def test_absolute_path_returned_unchanged(subject: Subject, tmp_path: Path) -> None:
+    """An absolute path is returned as-is without consulting the runfiles."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {})
+    absolute = tmp_path / "absolute.txt"
+    absolute.write_text(CONTENT, encoding="utf-8")
+    result = run(subject, [str(absolute)], env={"RUNFILES_DIR": str(runfiles_dir)})
+    assert_content(result, CONTENT)
+
+
+def test_rejects_parent_directory_segments(subject: Subject, tmp_path: Path) -> None:
+    """Paths containing `..` are rejected even if they would resolve on disk."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
+    (runfiles_dir / "runfiles_api" / "sub").mkdir()
+    result = run(
+        subject,
+        ["runfiles_api/sub/../test_data.txt"],
         env={"RUNFILES_DIR": str(runfiles_dir)},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
     )
-
-    # Verify the binary successfully read the file
-    assert result.returncode == 0, result.stdout
-    assert (
-        "Test data content" in result.stdout
-    ), f"Expected content not found in output: {result.stdout}"
+    assert_failure(result)
 
 
-def test_runfiles_manifest_env(
-    binary_under_test: Path, runfiles_manifest: Path
-) -> None:
-    """Test that runfiles are able to locate using RUNFILES_MANIFEST_FILE."""
-    # Run the binary with the manifest file
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
-        env={"RUNFILES_MANIFEST_FILE": str(runfiles_manifest)},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
+def test_rejects_current_directory_segments(subject: Subject, tmp_path: Path) -> None:
+    """Paths containing `./` segments are rejected even if they would resolve on disk."""
+    runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
+    result = run(
+        subject,
+        ["runfiles_api/./test_data.txt"],
+        env={"RUNFILES_DIR": str(runfiles_dir)},
     )
-
-    # Verify the binary successfully read the file
-    assert result.returncode == 0, result.stdout
-    assert (
-        "Test data content" in result.stdout
-    ), f"Expected content not found in output: {result.stdout}"
+    assert_failure(result)
 
 
-def test_runfiles_dir_no_manifest(binary_under_test: Path) -> None:
-    """Test that a binary in isolation with a `{name}.runfiles` directory can be used for runfiles without a `MANIFEST` file."""
-    # Create {binary_name}.runfiles directory adjacent to the binary
-    binary_name = binary_under_test.name
-    runfiles_subdir = binary_under_test.parent / f"{binary_name}.runfiles"
-    runfiles_subdir.mkdir(parents=True)
+# ---------------------------------------------------------------------------
+# Repository mapping
+# ---------------------------------------------------------------------------
 
-    # Create test data in the runfiles directory
-    test_file = runfiles_subdir / "runfiles_api" / "test_data.txt"
-    test_file.parent.mkdir(parents=True, exist_ok=True)
-    test_file.write_text("Test data content", encoding="utf-8")
+REPO_MAPPING = ",other_repo,other_repo+\n,runfiles_api,_main\n"
+"""A `_repo_mapping` for a main repository depending on `other_repo`."""
 
-    # Run binary with clean environment (no runfiles env vars)
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
-        env={},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
+
+def test_repo_mapping_dir_env(subject: Subject, tmp_path: Path) -> None:
+    """An apparent repository name is mapped to its canonical directory."""
+    runfiles_dir = make_runfiles_dir(
+        tmp_path / "runfiles",
+        {
+            "_repo_mapping": REPO_MAPPING,
+            "other_repo+/test_data.txt": CONTENT,
+        },
     )
-
-    # Verify the binary successfully found and read the file
-    assert result.returncode == 0, result.stdout
-    assert (
-        "Test data content" in result.stdout
-    ), f"Expected content not found in output: {result.stdout}"
-
-
-def test_runfiles_dir_with_manifest(binary_under_test: Path, tmp_path: Path) -> None:
-    """Test that a binary in isolation with a `{name}.runfiles` directory can be used for runfiles with a `MANIFEST` file."""
-    # Create {binary_name}.runfiles directory adjacent to the binary
-    binary_name = binary_under_test.name
-    runfiles_subdir = binary_under_test.parent / f"{binary_name}.runfiles"
-    runfiles_subdir.mkdir(parents=True)
-
-    # Create test data in a separate location
-    data_dir = tmp_path / "data"
-    data_dir.mkdir(parents=True)
-    test_file = data_dir / "test_data.txt"
-    test_file.write_text("Test data content", encoding="utf-8")
-
-    # Create MANIFEST file in the .runfiles directory
-    manifest_file = runfiles_subdir / "MANIFEST"
-    manifest_content = f"runfiles_api/test_data.txt {test_file}\n"
-    manifest_file.write_text(manifest_content, encoding="utf-8")
-
-    # Run binary with clean environment (no runfiles env vars)
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
-        env={},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
+    result = run(
+        subject, ["other_repo/test_data.txt"], env={"RUNFILES_DIR": str(runfiles_dir)}
     )
-
-    # Verify the binary successfully found and read the file
-    assert result.returncode == 0, result.stdout
-    assert (
-        "Test data content" in result.stdout
-    ), f"Expected content not found in output: {result.stdout}"
+    assert_content(result, CONTENT)
 
 
-def test_runfiles_dir_empty_manifest_env(
-    binary_under_test: Path, tmp_path: Path
-) -> None:
-    """Test that runfiles directories are used in cases where a manifest environment variable is defined but is empty"""
-    # Create {binary_name}.runfiles directory adjacent to the binary
-    binary_name = binary_under_test.name
-    runfiles_subdir = binary_under_test.parent / f"{binary_name}.runfiles"
-    runfiles_subdir.mkdir(parents=True)
-
-    # Create test data in a separate location
-    data_dir = tmp_path / "data"
-    data_dir.mkdir(parents=True)
-    test_file = data_dir / "test_data.txt"
-    test_file.write_text("Test data content", encoding="utf-8")
-
-    # Create MANIFEST file in the .runfiles directory
-    manifest_file = runfiles_subdir / "MANIFEST"
-    manifest_content = f"runfiles_api/test_data.txt {test_file}\n"
-    manifest_file.write_text(manifest_content, encoding="utf-8")
-
-    # Run binary with clean environment (no runfiles env vars)
-    result = subprocess.run(
-        binary_args(binary_under_test) + ["runfiles_api/test_data.txt"],
-        env={"RUNFILES_MANIFEST_FILE": ""},
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        text=True,
-        check=False,
+def test_repo_mapping_main_repo_dir_env(subject: Subject, tmp_path: Path) -> None:
+    """The main repository's apparent name is mapped to `_main`."""
+    runfiles_dir = make_runfiles_dir(
+        tmp_path / "runfiles",
+        {
+            "_repo_mapping": REPO_MAPPING,
+            "_main/test_data.txt": CONTENT,
+        },
     )
+    result = run(subject, [KEY], env={"RUNFILES_DIR": str(runfiles_dir)})
+    assert_content(result, CONTENT)
 
-    # Verify the binary successfully found and read the file
-    assert result.returncode == 0, result.stdout
-    assert (
-        "Test data content" in result.stdout
-    ), f"Expected content not found in output: {result.stdout}"
+
+def test_repo_mapping_manifest_env(subject: Subject, tmp_path: Path) -> None:
+    """Repository mapping is applied to manifest-based lookups."""
+    manifest = make_manifest(
+        tmp_path / "manifest",
+        {
+            "_repo_mapping": REPO_MAPPING,
+            "other_repo+/test_data.txt": CONTENT,
+        },
+    )
+    result = run(
+        subject,
+        ["other_repo/test_data.txt"],
+        env={"RUNFILES_MANIFEST_FILE": str(manifest)},
+    )
+    assert_content(result, CONTENT)

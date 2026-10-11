@@ -1,26 +1,18 @@
 name: Test C++
 
+# Compliance status for the C++ runfiles library. Red means at least one
+# conformance scenario fails for the version pinned in MODULE.bazel; see the
+# tables in README.md. Not a pull request gate: CI validates the harness itself.
 on:
   push:
     branches:
       - main
-  merge_group:
-  pull_request:
-    types:
-      - opened
-      - synchronize
+  workflow_dispatch:
 
 jobs:
   test-cc:
     name: C++
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/test-bazel-target
-        with:
-          target: //test/cc:test_runfiles
-
+    uses: ./.github/workflows/test-lang.yaml
+    with:
+      targets: //test/cc:test_runfiles
+      flags: --config=cc

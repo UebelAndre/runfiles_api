@@ -1,0 +1,11 @@
+load("@rules_venv//python:py_library.bzl", "py_library")
+
+py_library(
+    name = "harness",
+    srcs = [
+        "__init__.py",
+        "layout.py",
+        "subject.py",
+    ],
+    visibility = ["//visibility:public"],
+)
