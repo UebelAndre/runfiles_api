@@ -1,5 +1,5 @@
 load("@rules_venv//python:py_library.bzl", "py_library")
-load("//:runfiles_api_test.bzl", "runfiles_api_benchmark", "runfiles_api_test")
+load("//:runfiles_conformance_test.bzl", "runfiles_conformance_benchmark", "runfiles_conformance_test")
 
 # The subject is launched as a plain file; this target exists so the linters
 # cover it like the rest of the harness.
@@ -16,7 +16,7 @@ LAUNCHER = [
 
 TOOLS = ["//tools/launcher:python"]
 
-runfiles_api_test(
+runfiles_conformance_test(
     name = "test_runfiles",
     binary = "runfiles_user.py",
     lang = "reference",
@@ -24,7 +24,7 @@ runfiles_api_test(
     tools = TOOLS,
 )
 
-runfiles_api_benchmark(
+runfiles_conformance_benchmark(
     name = "bench_runfiles",
     binary = "runfiles_user.py",
     lang = "reference",

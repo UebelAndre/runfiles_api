@@ -1,6 +1,6 @@
 """A small binary for accessing runfiles.
 
-Implements the runfiles_api subject contract; see `README.md`.
+Implements the subject contract in `CONTRIBUTING.md`.
 """
 
 import argparse

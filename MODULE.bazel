@@ -1,7 +1,7 @@
-"""runfiles_api"""
+"""runfiles_conformance"""
 
 module(
-    name = "runfiles_api",
+    name = "runfiles_conformance",
     version = "0.0.0",
 )
 

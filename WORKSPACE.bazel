@@ -1,1 +1,1 @@
-workspace(name = "runfiles_api")
+workspace(name = "runfiles_conformance")

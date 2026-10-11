@@ -7,7 +7,7 @@ environment variables are stripped, and the subject is located without using
 any runfiles library.
 
 The subject contract (command line, exit codes, benchmark output) is documented
-in `README.md`.
+in `CONTRIBUTING.md`.
 """
 
 from __future__ import annotations
@@ -133,13 +133,13 @@ def load_subject(scratch: Path) -> Subject:
     Returns:
         The subject, ready to be launched.
     """
-    lang = os.environ.get("RUNFILES_API_LANG")
-    rlocationpath = os.environ.get("RUNFILES_API_SUBJECT")
-    launcher_json = os.environ.get("RUNFILES_API_LAUNCHER", "[]")
+    lang = os.environ.get("RUNFILES_CONFORMANCE_LANG")
+    rlocationpath = os.environ.get("RUNFILES_CONFORMANCE_SUBJECT")
+    launcher_json = os.environ.get("RUNFILES_CONFORMANCE_LAUNCHER", "[]")
     if not lang or not rlocationpath:
         raise RuntimeError(
-            "RUNFILES_API_LANG and RUNFILES_API_SUBJECT must be set. "
-            "Use the `runfiles_api_test` macro to define tests."
+            "RUNFILES_CONFORMANCE_LANG and RUNFILES_CONFORMANCE_SUBJECT must be set. "
+            "Use the `runfiles_conformance_test` macro to define tests."
         )
 
     source = locate_runfile(rlocationpath)

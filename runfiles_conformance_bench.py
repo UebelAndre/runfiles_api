@@ -2,7 +2,7 @@
 
 Each scenario builds a runfiles layout, invokes the subject in benchmark mode
 several times, and records the best observed initialization and per-lookup
-times. Subjects time themselves (see `README.md`), so process startup is
+times. Subjects time themselves (see `CONTRIBUTING.md`), so process startup is
 excluded.
 
 Results are written to `benchmark.json` in the test's undeclared outputs in
@@ -30,10 +30,10 @@ from harness.subject import (
     run,
 )
 
-ITERATIONS = int(os.environ.get("RUNFILES_API_BENCH_ITERATIONS", "1000"))
+ITERATIONS = int(os.environ.get("RUNFILES_CONFORMANCE_BENCH_ITERATIONS", "1000"))
 """How many times each lookup is repeated within one subject invocation."""
 
-ROUNDS = int(os.environ.get("RUNFILES_API_BENCH_ROUNDS", "5"))
+ROUNDS = int(os.environ.get("RUNFILES_CONFORMANCE_BENCH_ROUNDS", "5"))
 """How many times each scenario invokes the subject. The minimum is reported."""
 
 LOOKUPS = 10
@@ -152,7 +152,7 @@ def record(results: list[dict[str, Any]], subject: Subject, layout: Layout) -> N
 
 def data_keys(count: int, subdir: str = "data") -> list[str]:
     """Generate `count` rlocationpaths in the main repository."""
-    return [f"runfiles_api/{subdir}/{i:06d}.txt" for i in range(count)]
+    return [f"runfiles_conformance/{subdir}/{i:06d}.txt" for i in range(count)]
 
 
 MISSES = data_keys(LOOKUPS, "missing")

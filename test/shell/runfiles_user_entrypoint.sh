@@ -1,11 +1,11 @@
 #!/bin/bash
 # A small binary for accessing runfiles.
 #
-# Implements the runfiles_api subject contract; see `README.md`.
+# Implements the subject contract in `CONTRIBUTING.md`.
 
 __init_start="${EPOCHREALTIME:-}"
 
-# {RUNFILES_API}
+# {RUNFILES_CONFORMANCE}
 
 __init_end="${EPOCHREALTIME:-}"
 
