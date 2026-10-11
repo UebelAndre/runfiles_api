@@ -6,12 +6,12 @@ def _subject_test(name, src, binary, lang, launcher, tools, env, kind, **kwargs)
     """Define a pytest target that runs `src` against a subject binary.
 
     The target is tagged with `kind` (`compliance` or `benchmark`) and `lang`
-    so `.bazelrc` configs can select it; see README.md.
+    so `.bazelrc` configs can select it; see CONTRIBUTING.md.
     """
     subject_env = {
-        "RUNFILES_API_LANG": lang,
-        "RUNFILES_API_LAUNCHER": json.encode(launcher),
-        "RUNFILES_API_SUBJECT": "$(rlocationpath {})".format(binary),
+        "RUNFILES_CONFORMANCE_LANG": lang,
+        "RUNFILES_CONFORMANCE_LAUNCHER": json.encode(launcher),
+        "RUNFILES_CONFORMANCE_SUBJECT": "$(rlocationpath {})".format(binary),
     }
     subject_env.update(env)
 
@@ -26,7 +26,7 @@ def _subject_test(name, src, binary, lang, launcher, tools, env, kind, **kwargs)
         **kwargs
     )
 
-def runfiles_api_test(
+def runfiles_conformance_test(
         name,
         binary,
         lang,
@@ -36,7 +36,7 @@ def runfiles_api_test(
         **kwargs):
     """Create a test that validates a runfiles implementation against the subject contract.
 
-    See `README.md` for the contract the `binary` must implement.
+    See `CONTRIBUTING.md` for the contract the `binary` must implement.
 
     Args:
         name: The name of the test target.
@@ -53,7 +53,7 @@ def runfiles_api_test(
     """
     _subject_test(
         name,
-        Label("//:runfiles_api_test.py"),
+        Label("//:runfiles_conformance_test.py"),
         binary,
         lang,
         launcher,
@@ -63,7 +63,7 @@ def runfiles_api_test(
         **kwargs
     )
 
-def runfiles_api_benchmark(
+def runfiles_conformance_benchmark(
         name,
         binary,
         lang,
@@ -81,9 +81,9 @@ def runfiles_api_benchmark(
 
     Args:
         name: The name of the test target.
-        binary: The subject binary. See `runfiles_api_test`.
+        binary: The subject binary. See `runfiles_conformance_test`.
         lang: An identifier for the implementation under test (e.g. `rust`).
-        launcher: Command prefix used to launch `binary`. See `runfiles_api_test`.
+        launcher: Command prefix used to launch `binary`. See `runfiles_conformance_test`.
         tools: Targets providing make variables and runfiles for `launcher`.
         iterations: The number of times each lookup is repeated per round.
         rounds: The number of subject invocations per scenario. The minimum is reported.
@@ -92,14 +92,14 @@ def runfiles_api_benchmark(
         **kwargs: Additional arguments passed to `py_pytest_test`.
     """
     bench_env = {
-        "RUNFILES_API_BENCH_ITERATIONS": str(iterations),
-        "RUNFILES_API_BENCH_ROUNDS": str(rounds),
+        "RUNFILES_CONFORMANCE_BENCH_ITERATIONS": str(iterations),
+        "RUNFILES_CONFORMANCE_BENCH_ROUNDS": str(rounds),
     }
     bench_env.update(env)
 
     _subject_test(
         name,
-        Label("//:runfiles_api_bench.py"),
+        Label("//:runfiles_conformance_bench.py"),
         binary,
         lang,
         launcher,

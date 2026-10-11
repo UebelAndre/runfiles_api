@@ -1,8 +1,8 @@
 // A small binary for accessing runfiles.
 //
-// Implements the runfiles_api subject contract; see `README.md`.
+// Implements the subject contract in `CONTRIBUTING.md`.
 
-package com.runfiles_api.test;
+package com.runfiles_conformance.test;
 
 import com.google.devtools.build.runfiles.Runfiles;
 

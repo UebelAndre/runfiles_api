@@ -2,7 +2,7 @@
 
 Every scenario launches the subject from a scratch directory with a controlled
 environment and filesystem layout, then asserts on its exit code and output.
-The subject contract is documented in `README.md`. The reference subject in
+The subject contract is documented in `CONTRIBUTING.md`. The reference subject in
 `test/reference/` is expected to pass every scenario; the per-language subjects
 fail exactly where their library diverges from it.
 """
@@ -29,10 +29,10 @@ from harness.subject import (
     run,
 )
 
-KEY = "runfiles_api/test_data.txt"
+KEY = "runfiles_conformance/test_data.txt"
 """The rlocationpath used by most scenarios."""
 
-CONTENT = "runfiles_api test data"
+CONTENT = "runfiles_conformance test data"
 """The content of the runfile used by most scenarios."""
 
 
@@ -205,7 +205,9 @@ def test_missing_runfile_dir_env(subject: Subject, tmp_path: Path) -> None:
     """Looking up an unknown path in a directory reports that the runfile is missing."""
     runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
     result = run(
-        subject, ["runfiles_api/missing.txt"], env={"RUNFILES_DIR": str(runfiles_dir)}
+        subject,
+        ["runfiles_conformance/missing.txt"],
+        env={"RUNFILES_DIR": str(runfiles_dir)},
     )
     assert_failure(result, EXIT_NOT_FOUND)
 
@@ -215,7 +217,7 @@ def test_missing_runfile_manifest_env(subject: Subject, tmp_path: Path) -> None:
     manifest = make_manifest(tmp_path / "manifest", {KEY: CONTENT})
     result = run(
         subject,
-        ["runfiles_api/missing.txt"],
+        ["runfiles_conformance/missing.txt"],
         env={"RUNFILES_MANIFEST_FILE": str(manifest)},
     )
     assert_failure(result, EXIT_NOT_FOUND)
@@ -224,10 +226,12 @@ def test_missing_runfile_manifest_env(subject: Subject, tmp_path: Path) -> None:
 def test_manifest_directory_entry(subject: Subject, tmp_path: Path) -> None:
     """A path below a directory entry in the manifest resolves through that entry."""
     data_dir = make_runfiles_dir(tmp_path / "data", {"nested/test_data.txt": CONTENT})
-    manifest = write_manifest(tmp_path / "MANIFEST", {"runfiles_api/data": data_dir})
+    manifest = write_manifest(
+        tmp_path / "MANIFEST", {"runfiles_conformance/data": data_dir}
+    )
     result = run(
         subject,
-        ["runfiles_api/data/nested/test_data.txt"],
+        ["runfiles_conformance/data/nested/test_data.txt"],
         env={"RUNFILES_MANIFEST_FILE": str(manifest)},
     )
     assert_content(result, CONTENT)
@@ -250,7 +254,7 @@ def test_manifest_escaped_entry(subject: Subject, tmp_path: Path) -> None:
     with a space. In the key, those characters are escaped as `\\s`, `\\n`,
     and `\\b`; in the target only newlines and backslashes are escaped.
     """
-    key = "runfiles_api/test data.txt"
+    key = "runfiles_conformance/test data.txt"
     data_dir = make_runfiles_dir(
         tmp_path / "dir with spaces", {"test data.txt": CONTENT}
     )
@@ -277,10 +281,10 @@ def test_absolute_path_returned_unchanged(subject: Subject, tmp_path: Path) -> N
 def test_rejects_parent_directory_segments(subject: Subject, tmp_path: Path) -> None:
     """Paths containing `..` are rejected even if they would resolve on disk."""
     runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
-    (runfiles_dir / "runfiles_api" / "sub").mkdir()
+    (runfiles_dir / "runfiles_conformance" / "sub").mkdir()
     result = run(
         subject,
-        ["runfiles_api/sub/../test_data.txt"],
+        ["runfiles_conformance/sub/../test_data.txt"],
         env={"RUNFILES_DIR": str(runfiles_dir)},
     )
     assert_failure(result)
@@ -291,7 +295,7 @@ def test_rejects_current_directory_segments(subject: Subject, tmp_path: Path) ->
     runfiles_dir = make_runfiles_dir(tmp_path / "runfiles", {KEY: CONTENT})
     result = run(
         subject,
-        ["runfiles_api/./test_data.txt"],
+        ["runfiles_conformance/./test_data.txt"],
         env={"RUNFILES_DIR": str(runfiles_dir)},
     )
     assert_failure(result)
@@ -301,7 +305,7 @@ def test_rejects_current_directory_segments(subject: Subject, tmp_path: Path) ->
 # Repository mapping
 # ---------------------------------------------------------------------------
 
-REPO_MAPPING = ",other_repo,other_repo+\n,runfiles_api,_main\n"
+REPO_MAPPING = ",other_repo,other_repo+\n,runfiles_conformance,_main\n"
 """A `_repo_mapping` for a main repository depending on `other_repo`."""
 
 

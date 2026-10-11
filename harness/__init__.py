@@ -1,1 +1,1 @@
-"""Shared helpers for the runfiles_api conformance and benchmark suites."""
+"""Shared helpers for the runfiles_conformance conformance and benchmark suites."""
