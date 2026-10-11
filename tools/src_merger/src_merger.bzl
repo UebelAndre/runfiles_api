@@ -1,6 +1,4 @@
-"""Python utiltiies"""
-
-load("@rules_venv//python:py_info.bzl", "PyInfo")
+"""Utilities for producing single-file subjects."""
 
 def _find_runfiles_src(target, basename):
     """Locate the single-file runfiles library source provided by `target`.
@@ -24,8 +22,7 @@ def _find_runfiles_src(target, basename):
     fail("Failed to find `{}` in: {}".format(basename, target.label))
 
 def _runfiles_source_file_impl(ctx):
-    basename = "runfiles.py" if PyInfo in ctx.attr.runfiles else "runfiles.bash"
-    runfiles_src = _find_runfiles_src(ctx.attr.runfiles, basename)
+    runfiles_src = _find_runfiles_src(ctx.attr.runfiles, ctx.attr.basename)
 
     output = ctx.outputs.out
 
@@ -48,15 +45,20 @@ def _runfiles_source_file_impl(ctx):
     )]
 
 runfiles_source_file = rule(
-    doc = "A utility rule for locating the runfiles main source from a runfiles library.",
+    doc = "Inline a single-file runfiles library into a script so the result can run outside of a runfiles tree.",
     implementation = _runfiles_source_file_impl,
     attrs = {
+        "basename": attr.string(
+            doc = "The file name of the runfiles library source within `runfiles`.",
+            mandatory = True,
+        ),
         "out": attr.output(
             doc = "The output file to generate",
             mandatory = True,
         ),
         "runfiles": attr.label(
-            doc = "The runfiles library.",
+            doc = "The runfiles library, or its source file directly.",
+            allow_files = True,
             mandatory = True,
         ),
         "src": attr.label(

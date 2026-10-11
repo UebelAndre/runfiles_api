@@ -25,7 +25,7 @@ jobs:
         run: |
           bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test --config=benchmark --local_test_jobs=1 //...
           testlogs="$(bazel info bazel-testlogs)"
-          for lang in reference cc go java python rust shell; do
+          for lang in reference cc go java julia perl powershell python rust shell tcl; do
             mkdir -p "results/${lang}"
             cp "${testlogs}/test/${lang}/bench_runfiles/test.outputs/benchmark.json" "results/${lang}/"
           done
@@ -99,6 +99,61 @@ jobs:
           tool: customSmallerIsBetter
           output-file-path: results/shell/benchmark.json
           benchmark-data-dir-path: bench/shell
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+      - name: Publish (reference)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: reference
+          tool: customSmallerIsBetter
+          output-file-path: results/reference/benchmark.json
+          benchmark-data-dir-path: bench/reference
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+      - name: Publish (julia)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: julia
+          tool: customSmallerIsBetter
+          output-file-path: results/julia/benchmark.json
+          benchmark-data-dir-path: bench/julia
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+      - name: Publish (perl)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: perl
+          tool: customSmallerIsBetter
+          output-file-path: results/perl/benchmark.json
+          benchmark-data-dir-path: bench/perl
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+      - name: Publish (powershell)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: powershell
+          tool: customSmallerIsBetter
+          output-file-path: results/powershell/benchmark.json
+          benchmark-data-dir-path: bench/powershell
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+      - name: Publish (tcl)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: tcl
+          tool: customSmallerIsBetter
+          output-file-path: results/tcl/benchmark.json
+          benchmark-data-dir-path: bench/tcl
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: ${{ github.event_name == 'push' }}
           comment-on-alert: false

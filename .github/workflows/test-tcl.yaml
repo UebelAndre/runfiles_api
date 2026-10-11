@@ -1,0 +1,18 @@
+name: Test Tcl
+
+# Compliance status for the Tcl runfiles library. Red means at least one
+# conformance scenario fails for the version pinned in MODULE.bazel; see the
+# tables in README.md. Not a pull request gate: CI validates the harness itself.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-tcl:
+    name: Tcl
+    uses: ./.github/workflows/test-lang.yaml
+    with:
+      targets: //test/tcl:test_runfiles
+      flags: --config=tcl

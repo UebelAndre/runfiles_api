@@ -1,0 +1,19 @@
+name: Test Batch
+
+# Compliance status for the Batch runfiles library. Red means at least one
+# conformance scenario fails for the version pinned in MODULE.bazel; see the
+# tables in README.md. Not a pull request gate: CI validates the harness itself.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-batch:
+    name: Batch
+    uses: ./.github/workflows/test-lang.yaml
+    with:
+      targets: //test/batch:test_runfiles
+      flags: --config=batch
+      os: '["windows-latest"]'

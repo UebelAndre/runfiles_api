@@ -107,7 +107,11 @@ Results land in `benchmark.json` under the test's undeclared outputs.
 
 ## Adding a library
 
-1. Add a subject under `test/<lang>/` implementing the contract above.
+1. Add a subject under `test/<lang>/` implementing the contract above. For
+   interpreted languages, inline the library with `runfiles_source_file` (see
+   `test/perl/BUILD.bazel`) and point `launcher` at the toolchain's
+   interpreter; `subject_env` covers variables the interpreter itself needs
+   (see `test/tcl/BUILD.bazel`).
 2. Define `runfiles_conformance_test` and `runfiles_conformance_benchmark`
    targets, tagging the subject binary with `<lang>`.
 3. Add `build:<lang>` / `test:<lang>` configs to `.bazelrc` and the language to

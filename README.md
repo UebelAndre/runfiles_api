@@ -17,9 +17,15 @@ whether each library conforms at the version pinned in `MODULE.bazel`.
 | Python `@rules_python//python/runfiles` | [![Python](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-python.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-python.yaml) |
 | Rust `@rules_rust//rust/runfiles` | [![Rust](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-rust.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-rust.yaml) |
 | Shell `@rules_shell//shell/runfiles` | [![Shell](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-shell.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-shell.yaml) |
+| Perl `@rules_perl//perl/runfiles` | [![Perl](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-perl.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-perl.yaml) |
+| PowerShell `@rules_powershell//powershell/runfiles` | [![PowerShell](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-powershell.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-powershell.yaml) |
+| Batch `@rules_batch//batch/runfiles` | [![Batch](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-batch.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-batch.yaml) |
+| Julia `@rules_julia//julia/runfiles` | [![Julia](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-julia.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-julia.yaml) |
+| Tcl `@rules_tcl//tcl/runfiles` | [![Tcl](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-tcl.yaml/badge.svg?branch=main)](https://github.com/UebelAndre/runfiles-conformance/actions/workflows/test-tcl.yaml) |
 
 A red badge means the library fails at least one scenario. Click it for the
-latest run; the test log names each failing scenario.
+latest run; the test log names each failing scenario. Batch runs on Windows
+only.
 
 ## Benchmarks
 
@@ -31,7 +37,12 @@ updates:
 [Python](https://uebelandre.github.io/runfiles-conformance/bench/python/) ·
 [Rust](https://uebelandre.github.io/runfiles-conformance/bench/rust/) ·
 [Shell](https://uebelandre.github.io/runfiles-conformance/bench/shell/) ·
+[Perl](https://uebelandre.github.io/runfiles-conformance/bench/perl/) ·
+[PowerShell](https://uebelandre.github.io/runfiles-conformance/bench/powershell/) ·
+[Julia](https://uebelandre.github.io/runfiles-conformance/bench/julia/) ·
+[Tcl](https://uebelandre.github.io/runfiles-conformance/bench/tcl/) ·
 [Reference](https://uebelandre.github.io/runfiles-conformance/bench/reference/).
+Batch is Windows-only and reports benchmarking as unsupported.
 Numbers are only comparable across versions of the same library.
 
 ## Running

@@ -1,0 +1,35 @@
+load("//:runfiles_conformance_test.bzl", "runfiles_conformance_benchmark", "runfiles_conformance_test")
+load("//tools/src_merger:src_merger.bzl", "runfiles_source_file")
+
+# The runfiles module is inlined so the subject is a single file that can be
+# launched outside of any runfiles tree.
+runfiles_source_file(
+    name = "runfiles_user",
+    testonly = True,
+    src = "runfiles_user_entrypoint.pl",
+    out = "runfiles_user.pl",
+    basename = "Runfiles.pm",
+    runfiles = "@rules_perl//perl/runfiles",
+    tags = ["perl"],
+    template = "# {RUNFILES_LIBRARY}",
+)
+
+LAUNCHER = ["$(PERL_RLOCATIONPATH)"]
+
+TOOLS = ["@rules_perl//perl:current_toolchain"]
+
+runfiles_conformance_test(
+    name = "test_runfiles",
+    binary = ":runfiles_user",
+    lang = "perl",
+    launcher = LAUNCHER,
+    tools = TOOLS,
+)
+
+runfiles_conformance_benchmark(
+    name = "bench_runfiles",
+    binary = ":runfiles_user",
+    lang = "perl",
+    launcher = LAUNCHER,
+    tools = TOOLS,
+)
