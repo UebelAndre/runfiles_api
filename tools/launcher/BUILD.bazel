@@ -1,4 +1,4 @@
-load(":launcher.bzl", "java_launcher", "python_launcher", "shell_launcher")
+load(":launcher.bzl", "java_launcher", "python_launcher", "shell_launcher", "tcl_launcher")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -12,4 +12,8 @@ python_launcher(
 
 shell_launcher(
     name = "shell",
+)
+
+tcl_launcher(
+    name = "tcl",
 )

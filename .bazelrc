@@ -44,8 +44,8 @@ common --java_runtime_version=remotejdk_11
 ## `bazel test //... --config=rust`. See README.md.
 ###############################################################################
 
-build --build_tag_filters=-cc,-go,-java,-python,-rust,-shell
-test --test_tag_filters=-cc,-go,-java,-python,-rust,-shell
+build --build_tag_filters=-cc,-go,-java,-python,-rust,-shell,-perl,-powershell,-batch,-julia,-tcl
+test --test_tag_filters=-cc,-go,-java,-python,-rust,-shell,-perl,-powershell,-batch,-julia,-tcl
 
 build:cc --build_tag_filters=cc
 test:cc --test_tag_filters=cc
@@ -64,6 +64,21 @@ test:rust --test_tag_filters=rust
 
 build:shell --build_tag_filters=shell
 test:shell --test_tag_filters=shell
+
+build:perl --build_tag_filters=perl
+test:perl --test_tag_filters=perl
+
+build:powershell --build_tag_filters=powershell
+test:powershell --test_tag_filters=powershell
+
+build:batch --build_tag_filters=batch
+test:batch --test_tag_filters=batch
+
+build:julia --build_tag_filters=julia
+test:julia --test_tag_filters=julia
+
+build:tcl --build_tag_filters=tcl
+test:tcl --test_tag_filters=tcl
 
 # All conformance tests, including the reference subject.
 build:compliance --build_tag_filters=compliance

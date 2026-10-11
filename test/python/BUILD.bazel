@@ -8,6 +8,7 @@ runfiles_source_file(
     testonly = True,
     src = "runfiles_user_entrypoint.py",
     out = "runfiles_user.py",
+    basename = "runfiles.py",
     runfiles = "@rules_python//python/runfiles",
     tags = ["python"],
     template = "from python.runfiles import Runfiles",

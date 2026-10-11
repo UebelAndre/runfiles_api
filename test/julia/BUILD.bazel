@@ -1,0 +1,39 @@
+load("//:runfiles_conformance_test.bzl", "runfiles_conformance_benchmark", "runfiles_conformance_test")
+load("//tools/src_merger:src_merger.bzl", "runfiles_source_file")
+
+# The runfiles module is inlined so the subject is a single file that can be
+# launched outside of any runfiles tree.
+runfiles_source_file(
+    name = "runfiles_user",
+    testonly = True,
+    src = "runfiles_user_entrypoint.jl",
+    out = "runfiles_user.jl",
+    basename = "Runfiles.jl",
+    runfiles = "@rules_julia//julia/runfiles",
+    tags = ["julia"],
+    template = "# {RUNFILES_LIBRARY}",
+)
+
+LAUNCHER = [
+    "$(JULIA_RLOCATIONPATH)",
+    "--startup-file=no",
+    "--history-file=no",
+]
+
+TOOLS = ["@rules_julia//julia:current_julia_toolchain"]
+
+runfiles_conformance_test(
+    name = "test_runfiles",
+    binary = ":runfiles_user",
+    lang = "julia",
+    launcher = LAUNCHER,
+    tools = TOOLS,
+)
+
+runfiles_conformance_benchmark(
+    name = "bench_runfiles",
+    binary = ":runfiles_user",
+    lang = "julia",
+    launcher = LAUNCHER,
+    tools = TOOLS,
+)

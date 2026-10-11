@@ -119,6 +119,9 @@ class Subject:
     launcher: tuple[str, ...]
     """The command prefix used to launch `path`."""
 
+    env: Mapping[str, str]
+    """Variables the subject's interpreter needs regardless of scenario."""
+
     def command(self, args: Sequence[str]) -> list[str]:
         """Build the full command line for invoking the subject."""
         return [*self.launcher, str(self.path), *args]
@@ -136,6 +139,7 @@ def load_subject(scratch: Path) -> Subject:
     lang = os.environ.get("RUNFILES_CONFORMANCE_LANG")
     rlocationpath = os.environ.get("RUNFILES_CONFORMANCE_SUBJECT")
     launcher_json = os.environ.get("RUNFILES_CONFORMANCE_LAUNCHER", "[]")
+    env_json = os.environ.get("RUNFILES_CONFORMANCE_SUBJECT_ENV", "{}")
     if not lang or not rlocationpath:
         raise RuntimeError(
             "RUNFILES_CONFORMANCE_LANG and RUNFILES_CONFORMANCE_SUBJECT must be set. "
@@ -153,8 +157,13 @@ def load_subject(scratch: Path) -> Subject:
     launcher = tuple(
         resolve_launcher_element(element) for element in json.loads(launcher_json)
     )
+    subject_env = {
+        key: resolve_launcher_element(value)
+        for key, value in json.loads(env_json).items()
+        if value
+    }
 
-    return Subject(lang=lang, path=copy, launcher=launcher)
+    return Subject(lang=lang, path=copy, launcher=launcher, env=subject_env)
 
 
 @dataclass(frozen=True)
@@ -200,6 +209,7 @@ def run(
         The captured result.
     """
     full_env = clean_environment()
+    full_env.update(subject.env)
     overrides = dict(env or {})
     full_env.update(overrides)
 

@@ -65,3 +65,26 @@ shell_launcher = rule(
     implementation = _shell_launcher_impl,
     toolchains = ["@bazel_tools//tools/sh:toolchain_type"],
 )
+
+def _tcl_launcher_impl(ctx):
+    toolchain = ctx.toolchains["@rules_tcl//tcl:toolchain_type"]
+    variables = {
+        "TCLSH_RLOCATIONPATH": _rlocationpath(toolchain.tclsh.short_path, ctx.workspace_name),
+        # Directory of `init.tcl`, for `TCL_LIBRARY`; empty when the interpreter
+        # ships its own library.
+        "TCL_LIBRARY_RLOCATIONPATH": "",
+    }
+    if toolchain.init_tcl:
+        init_tcl = _rlocationpath(toolchain.init_tcl.short_path, ctx.workspace_name)
+        variables["TCL_LIBRARY_RLOCATIONPATH"] = init_tcl.rsplit("/", 1)[0]
+
+    return [
+        platform_common.TemplateVariableInfo(variables),
+        DefaultInfo(runfiles = ctx.runfiles(transitive_files = toolchain.all_files)),
+    ]
+
+tcl_launcher = rule(
+    doc = "Exposes the current Tcl toolchain as `TCLSH_RLOCATIONPATH` and `TCL_LIBRARY_RLOCATIONPATH` make variables.",
+    implementation = _tcl_launcher_impl,
+    toolchains = ["@rules_tcl//tcl:toolchain_type"],
+)
