@@ -1,5 +1,7 @@
 name: CI
 
+# Validates the repository's own infrastructure. Compliance of the individual
+# runfiles libraries is reported by the `Test <language>` workflows instead.
 on:
   push:
     branches:
@@ -10,14 +12,27 @@ on:
       - opened
       - synchronize
 
-env:
-  BAZEL_STARTUP_FLAGS: --bazelrc=${{ github.workspace }}/.github/github.bazelrc
-
 jobs:
-  ci:
+  # The reference subject implements the specification the scenarios encode,
+  # so the harness, launchers, and scenarios are exercised end to end without
+  # depending on any ruleset's library.
+  harness:
+    name: Harness
+    uses: ./.github/workflows/test-lang.yaml
+    with:
+      targets: //test/reference/...
+
+  # Every target, including all language integrations, must at least build.
+  build:
+    name: Build (Bazel ${{ matrix.bazel }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel: [7.x, 8.x, 9.x]
+    env:
+      USE_BAZEL_VERSION: ${{ matrix.bazel }}
     steps:
-      # Checkout the code
       - uses: actions/checkout@v5
       - uses: bazel-contrib/setup-bazel@0.15.0
         with:
@@ -25,20 +40,9 @@ jobs:
           disk-cache: ${{ github.workflow }}
           repository-cache: true
 
-      - name: Setup Bazelrc (Windows)
-        run: |
-          echo "TEMP=$env:RUNNER_TEMP" >> "$env:GITHUB_ENV"
-          echo "TMP=$env:RUNNER_TEMP" >> "$env:GITHUB_ENV"
-          echo "startup --output_user_root=D:/bzl" > ./user.bazelrc
-        if: startswith(runner.os, 'Windows')
       - name: Setup Bazelrc
         run: |
           echo "common --keep_going" >> ./user.bazelrc
 
-      # Ensure the repo is fully buildable.
-      - name: Test (Unix)
-        run: bazel ${BAZEL_STARTUP_FLAGS[@]} build //...
-        if: startswith(runner.os, 'Windows') != true
-      - name: Test (Windows)
-        run: bazel $env:BAZEL_STARTUP_FLAGS build //...
-        if: startswith(runner.os, 'Windows')
+      - name: Build
+        run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc build //... --config=all

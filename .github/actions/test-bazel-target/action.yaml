@@ -5,6 +5,10 @@ inputs:
   target:
     description: 'Bazel test target to run'
     required: true
+  flags:
+    description: 'Extra flags for `bazel test` (e.g. `--config=rust`)'
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -30,11 +34,11 @@ runs:
 
     - name: Test (Unix)
       shell: bash
-      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }}
+      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }} ${{ inputs.flags }}
       if: runner.os != 'Windows'
 
     - name: Test (Windows)
       shell: pwsh
-      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }}
+      run: bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test ${{ inputs.target }} ${{ inputs.flags }}
       if: runner.os == 'Windows'
 

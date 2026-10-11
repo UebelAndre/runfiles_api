@@ -22,9 +22,6 @@ build --incompatible_disallow_empty_glob=true
 # https://github.com/bazelbuild/bazel/issues/12821
 build --nolegacy_external_runfiles
 
-# Required for cargo_build_script support before Bazel 7
-build --incompatible_merge_fixed_and_default_shell_env
-
 # Disable legacy __init__.py behavior which is known to conflict with
 # modern python versions (3.9+)
 build --incompatible_default_to_explicit_init_py
@@ -32,7 +29,53 @@ build --incompatible_default_to_explicit_init_py
 # https://github.com/bazelbuild/bazel/issues/23043.
 build --incompatible_autoload_externally=
 
+# Keep undeclared test outputs (benchmark results) as plain files on every
+# supported Bazel version. This became the default in Bazel 8.
+test --nozip_undeclared_test_outputs
+
 common --java_runtime_version=remotejdk_11
+
+###############################################################################
+## Language integrations
+##
+## Targets under `test/<lang>/` are tagged with their language and with
+## `compliance` (conformance tests) or `benchmark`. They are excluded from
+## wildcard invocations by default; opt in with a config, e.g.
+## `bazel test //... --config=rust`. See README.md.
+###############################################################################
+
+build --build_tag_filters=-cc,-go,-java,-python,-rust,-shell
+test --test_tag_filters=-cc,-go,-java,-python,-rust,-shell
+
+build:cc --build_tag_filters=cc
+test:cc --test_tag_filters=cc
+
+build:go --build_tag_filters=go
+test:go --test_tag_filters=go
+
+build:java --build_tag_filters=java
+test:java --test_tag_filters=java
+
+build:python --build_tag_filters=python
+test:python --test_tag_filters=python
+
+build:rust --build_tag_filters=rust
+test:rust --test_tag_filters=rust
+
+build:shell --build_tag_filters=shell
+test:shell --test_tag_filters=shell
+
+# All conformance tests, including the reference subject.
+build:compliance --build_tag_filters=compliance
+test:compliance --test_tag_filters=compliance
+
+# All benchmarks, including the reference subject.
+build:benchmark --build_tag_filters=benchmark
+test:benchmark --test_tag_filters=benchmark
+
+# Everything.
+build:all --build_tag_filters=
+test:all --test_tag_filters=
 
 ###############################################################################
 ## Configuration Flags

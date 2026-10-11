@@ -1,0 +1,105 @@
+name: Benchmark
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      # One test at a time so the benchmarks do not contend for CPU.
+      - name: Benchmark
+        run: |
+          bazel --bazelrc=${{ github.workspace }}/.github/github.bazelrc test --config=benchmark --local_test_jobs=1 //...
+          testlogs="$(bazel info bazel-testlogs)"
+          for lang in reference cc go java python rust shell; do
+            mkdir -p "results/${lang}"
+            cp "${testlogs}/test/${lang}/bench_runfiles/test.outputs/benchmark.json" "results/${lang}/"
+          done
+
+      # Each publish step pulls, commits, and pushes `gh-pages`; steps run
+      # sequentially so they cannot race.
+      - name: Publish (cc)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: cc
+          tool: customSmallerIsBetter
+          output-file-path: results/cc/benchmark.json
+          benchmark-data-dir-path: bench/cc
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Publish (go)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: go
+          tool: customSmallerIsBetter
+          output-file-path: results/go/benchmark.json
+          benchmark-data-dir-path: bench/go
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Publish (java)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: java
+          tool: customSmallerIsBetter
+          output-file-path: results/java/benchmark.json
+          benchmark-data-dir-path: bench/java
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Publish (python)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: python
+          tool: customSmallerIsBetter
+          output-file-path: results/python/benchmark.json
+          benchmark-data-dir-path: bench/python
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Publish (rust)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: rust
+          tool: customSmallerIsBetter
+          output-file-path: results/rust/benchmark.json
+          benchmark-data-dir-path: bench/rust
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false
+
+      - name: Publish (shell)
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: shell
+          tool: customSmallerIsBetter
+          output-file-path: results/shell/benchmark.json
+          benchmark-data-dir-path: bench/shell
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: ${{ github.event_name == 'push' }}
+          comment-on-alert: false
+          fail-on-alert: false

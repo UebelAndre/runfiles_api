@@ -1,15 +1,23 @@
 load("@rules_rust//rust:rust_binary.bzl", "rust_binary")
-load("//:runfiles_api_test.bzl", "runfiles_api_test")
+load("//:runfiles_api_test.bzl", "runfiles_api_benchmark", "runfiles_api_test")
 
 rust_binary(
     name = "runfiles_user",
     testonly = True,
     srcs = ["runfiles_user.rs"],
     edition = "2021",
+    tags = ["rust"],
     deps = ["@rules_rust//rust/runfiles"],
 )
 
 runfiles_api_test(
     name = "test_runfiles",
     binary = ":runfiles_user",
+    lang = "rust",
+)
+
+runfiles_api_benchmark(
+    name = "bench_runfiles",
+    binary = ":runfiles_user",
+    lang = "rust",
 )

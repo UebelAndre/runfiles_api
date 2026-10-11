@@ -1,0 +1,33 @@
+name: Test targets
+
+# Runs a Bazel target pattern on every supported OS and Bazel version.
+on:
+  workflow_call:
+    inputs:
+      targets:
+        description: 'Bazel target pattern to test'
+        required: true
+        type: string
+      flags:
+        description: 'Extra flags for `bazel test` (e.g. `--config=rust`)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  test:
+    name: Bazel ${{ matrix.bazel }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+        bazel: [7.x, 8.x, 9.x]
+    env:
+      USE_BAZEL_VERSION: ${{ matrix.bazel }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/test-bazel-target
+        with:
+          target: ${{ inputs.targets }}
+          flags: ${{ inputs.flags }}

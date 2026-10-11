@@ -2,39 +2,30 @@
 
 load("@rules_venv//python:py_info.bzl", "PyInfo")
 
-def _find_python_runfiles(target):
-    runfiles_src = None
+def _find_runfiles_src(target, basename):
+    """Locate the single-file runfiles library source provided by `target`.
 
-    for src in target[DefaultInfo].files.to_list():
-        if src.basename == "runfiles.py":
-            runfiles_src = src
-            break
-
-    if not runfiles_src:
-        fail("Failed to find runfiles src from: {}".format(target.label))
-
-    return runfiles_src
-
-def _find_bash_runfiles(target):
-    runfiles_src = None
+    Depending on the ruleset and Bazel version the file is exposed as a plain
+    source (e.g. `@bazel_tools//tools/bash/runfiles`), as a default output, or
+    only as a root symlink in the target's runfiles.
+    """
+    candidates = (
+        target[DefaultInfo].files.to_list() +
+        target[DefaultInfo].default_runfiles.files.to_list()
+    )
+    for src in candidates:
+        if src.basename == basename:
+            return src
 
     for entry in target[DefaultInfo].default_runfiles.root_symlinks.to_list():
-        if entry.target_file.basename == "runfiles.bash":
-            runfiles_src = entry.target_file
-            break
+        if entry.target_file.basename == basename:
+            return entry.target_file
 
-    if not runfiles_src:
-        fail("Failed to find runfiles src from: {}".format(target.label))
-
-    return runfiles_src
+    fail("Failed to find `{}` in: {}".format(basename, target.label))
 
 def _runfiles_source_file_impl(ctx):
-    runfiles_src = None
-
-    if PyInfo in ctx.attr.runfiles:
-        runfiles_src = _find_python_runfiles(ctx.attr.runfiles)
-    else:
-        runfiles_src = _find_bash_runfiles(ctx.attr.runfiles)
+    basename = "runfiles.py" if PyInfo in ctx.attr.runfiles else "runfiles.bash"
+    runfiles_src = _find_runfiles_src(ctx.attr.runfiles, basename)
 
     output = ctx.outputs.out
 

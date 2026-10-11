@@ -1,0 +1,15 @@
+load(":launcher.bzl", "java_launcher", "python_launcher", "shell_launcher")
+
+package(default_visibility = ["//visibility:public"])
+
+java_launcher(
+    name = "java",
+)
+
+python_launcher(
+    name = "python",
+)
+
+shell_launcher(
+    name = "shell",
+)

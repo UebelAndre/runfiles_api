@@ -3,5 +3,6 @@ exports_files([
     ".isort.cfg",
     ".mypy.ini",
     ".pylintrc.toml",
+    "runfiles_api_bench.py",
     "runfiles_api_test.py",
 ])

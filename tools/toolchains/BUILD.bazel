@@ -9,7 +9,7 @@ load("@rules_venv//python/pytest:defs.bzl", "py_pytest_toolchain")
 
 py_black_toolchain(
     name = "py_black_toolchain_impl",
-    black = "@pip_deps//:black",
+    black = "@pip_deps//black",
     visibility = ["//visibility:public"],
 )
 
@@ -21,7 +21,7 @@ toolchain(
 
 py_isort_toolchain(
     name = "py_isort_toolchain_impl",
-    isort = "@pip_deps//:isort",
+    isort = "@pip_deps//isort",
     visibility = ["//visibility:public"],
 )
 
@@ -33,7 +33,7 @@ toolchain(
 
 py_mypy_toolchain(
     name = "py_mypy_toolchain_impl",
-    mypy = "@pip_deps//:mypy",
+    mypy = "@pip_deps//mypy",
     visibility = ["//visibility:public"],
 )
 
@@ -45,7 +45,7 @@ toolchain(
 
 py_pylint_toolchain(
     name = "py_pylint_toolchain_impl",
-    pylint = "@pip_deps//:pylint",
+    pylint = "@pip_deps//pylint",
     visibility = ["//visibility:public"],
 )
 
@@ -58,8 +58,8 @@ toolchain(
 py_library(
     name = "pytest",
     deps = [
-        "@pip_deps//:pytest",
-        "@pip_deps//:pytest_cov",
+        "@pip_deps//pytest",
+        "@pip_deps//pytest_cov",
     ],
 )
 
