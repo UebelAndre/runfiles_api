@@ -64,8 +64,8 @@ bazel build //... --config=all        # build everything, run nothing
 
 The filter applies to explicitly named targets too, so
 `bazel test //test/rust:test_runfiles` needs `--config=rust`. Expect
-`--config=compliance` and `--config=all` to report failures: every library
-with a recorded divergence fails its conformance test.
+`--config=compliance` and `--config=all` to report failures: a non-conforming
+library fails its conformance test.
 
 There is no `.bazelversion`. CI covers Bazel 7.x, 8.x, and 9.x on Linux,
 macOS, and Windows; use `USE_BAZEL_VERSION=8.x` to pick one locally.
@@ -77,6 +77,7 @@ macOS, and Windows; use `USE_BAZEL_VERSION=8.x` to pick one locally.
   never depends on a library's compliance.
 - **Test &lt;language&gt;** workflows produce the badges. They run on pushes
   to `main` and on demand, and are red whenever the library fails a scenario.
+  The job log is the record of which scenarios fail.
 - **Benchmark** runs on pushes to `main` and publishes to the `gh-pages`
   branch.
 
@@ -100,9 +101,9 @@ Results land in `benchmark.json` under the test's undeclared outputs.
 1. State the behavior in [SPEC.md](SPEC.md) and tag it with the scenario name.
 2. Implement it in the reference subject if it does not already satisfy it.
 3. Add the test. It must pass against the reference subject.
-4. Run `--config=compliance`, confirm in each failing library's source that the
-   failure is the library's behavior, and update the matrix in `SPEC.md` and
-   the summary table in `README.md`.
+4. Run `--config=compliance`. For each library that fails the new scenario,
+   confirm in its source that the failure is the library's behavior and not a
+   harness bug.
 
 ## Adding a library
 
@@ -111,5 +112,5 @@ Results land in `benchmark.json` under the test's undeclared outputs.
    targets, tagging the subject binary with `<lang>`.
 3. Add `build:<lang>` / `test:<lang>` configs to `.bazelrc` and the language to
    the default exclusion list there.
-4. Add a `test-<lang>.yaml` workflow like the existing ones, a row to the
-   README table, and a column to the matrix in `SPEC.md`.
+4. Add a `test-<lang>.yaml` workflow like the existing ones and a row to the
+   README table.
